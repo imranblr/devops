@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    stages {
+    stage("Build image") {
+            steps {
+                script {
+                    sh 'hostname'
+                    sh 'whoami'
+                    sh 'pwd'
+                    sh 'ls -la -F'
+                    myapp = docker.build("10.2.123.55:5555/root/nginx-jenkins:${env.BUILD_ID}")
+                }
+            }
+        }
+        stage("Push image") {
+            steps {
+                script {
+                    docker.withRegistry('http://10.2.123.55:5555', 'gitlabregistrylogin') {
+                            myapp.push("latest")
+                            myapp.push("${env.BUILD_ID}")
+                    }
+                }
+            }
+        }
+    }
+}
+node {
+        stage('Deploy on K8') {
+            withKubeConfig([caCertificate: '', clusterName: 'kubernetes', contextName: 'kubernetes-admin@kubernetes', credentialsId: 'kubernetes-admin', namespace: 'default', serverUrl: 'https://10.2.123.83:6443']) 
+            {
+                sh "sed -i 's/BUILD_ID/${env.BUILD_ID}/g' nginx-jenkins-deployment.yaml"
+                sh 'kubectl apply -f nginx-jenkins-deployment.yaml'
+            }
+        }
+    }

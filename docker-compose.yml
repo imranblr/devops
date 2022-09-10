@@ -3,13 +3,13 @@ services:
   web:
     image: nginx:latest
     restart: always
-    volumes:
+    volumes:    
     - ./source/html:/usr/share/nginx/html:ro
     ports:
     - 80:80
 
   ops:
-    image: jenkins/jenkins:latest
+    image: jenkins/jenkins:latest 
     restart: always
     ports:
     - 8080:8080
