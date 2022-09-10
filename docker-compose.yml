@@ -1,0 +1,49 @@
+version: '3'
+services:
+  web:
+    image: nginx:latest
+    restart: always
+    volumes:
+    - ./source/html:/usr/share/nginx/html:ro
+    ports:
+    - 80:80
+
+  ops:
+    image: jenkins/jenkins:latest
+    restart: always
+    ports:
+    - 8080:8080
+    - 5000:5000
+
+  git:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: always
+    hostname: 'gitlab.example.com'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.example.com'
+    ports:
+      - '880:80'
+      - '443:443'
+      - '822:22'
+      - '5050:5050'
+    extra_hosts:
+      - "gitlab.example.com:192.168.100.12"
+    volumes:
+      - '/srv/gitlab/config:/etc/gitlab'
+      - '/srv/gitlab/logs:/var/log/gitlab'
+      - '/srv/gitlab/data:/var/opt/gitlab'
+
+  runner:
+    image: 'gitlab/gitlab-runner:latest'
+    restart: always
+    hostname: 'gitlab-runner'
+    ports:
+      - '8093:8093'
+    extra_hosts:
+      - "gitlab.example.com:192.168.100.12"
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - '/srv/gitlab-runner/config:/etc/gitlab-runner'
+      - '/srv/gitlab-runner/certs:/etc/gitlab-runner/certs'
+      - '/home/sysadmin/devops/source/html:/opt/web'
